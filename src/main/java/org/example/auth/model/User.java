@@ -9,6 +9,7 @@ import java.io.Serializable;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@lombok.ToString(exclude = "password")
 public class User implements Serializable {
     private String username;
     private String password;
