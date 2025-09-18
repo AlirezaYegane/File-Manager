@@ -1,6 +1,7 @@
 package org.example.auth.ui;
 
 
+import org.example.auth.constant.UserState;
 import org.example.auth.service.UserService;
 
 import java.util.Scanner;
@@ -50,7 +51,7 @@ public class Menu {
         System.out.print("enter password: ");
         String password = scanner.nextLine();
 
-        UserService.RegistrationResult result = userService.register(username, password);
+        UserState.RegistrationResult result = userService.register(username, password);
 
         switch (result) {
             case SUCCESS:
@@ -69,7 +70,7 @@ public class Menu {
         System.out.print("password: ");
         String password = scanner.nextLine();
 
-        UserService.LoginResult result = userService.login(username, password);
+        UserState.LoginResult result = userService.login(username, password);
 
         switch (result) {
             case SUCCESS:
