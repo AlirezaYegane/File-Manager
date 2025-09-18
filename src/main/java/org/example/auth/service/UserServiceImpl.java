@@ -1,6 +1,7 @@
 package org.example.auth.service;
 
 
+import org.example.auth.constant.UserState;
 import org.example.auth.model.User;
 import org.example.auth.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -25,25 +26,25 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public RegistrationResult register(String username, String password) {
+    public UserState.RegistrationResult register(String username, String password) {
         if (userRepository.findByUsername(username).isPresent()) {
             log.warn("Registration failed: Username '{}' already exists.", username);
-            return RegistrationResult.USERNAME_ALREADY_EXISTS;
+            return UserState.RegistrationResult.USERNAME_ALREADY_EXISTS;
         }
 
         User newUser = new User(username, password);
         userRepository.save(newUser);
         log.info("User '{}' registered successfully.", username);
-        return RegistrationResult.SUCCESS;
+        return UserState.RegistrationResult.SUCCESS;
     }
 
     @Override
-    public LoginResult login(String username, String password) {
+    public UserState.LoginResult login(String username, String password) {
         String lowerCaseUsername = username.toLowerCase();
 
         if (isUserLocked(lowerCaseUsername)) {
             log.warn("Login failed for user '{}': Account is locked.", username);
-            return LoginResult.USER_LOCKED;
+            return UserState.LoginResult.USER_LOCKED;
         }
 
         Optional<User> userOptional = userRepository.findByUsername(lowerCaseUsername);
@@ -54,16 +55,16 @@ public class UserServiceImpl implements UserService {
             if (user.getPassword().equals(password)) {
                 log.info("User '{}' logged in successfully.", username);
                 resetLoginAttempts(lowerCaseUsername);
-                return LoginResult.SUCCESS;
+                return UserState.LoginResult.SUCCESS;
             } else {
                 log.warn("Invalid password attempt for user '{}'.", username);
                 handleFailedLogin(lowerCaseUsername);
-                return LoginResult.INVALID_CREDENTIALS;
+                return UserState.LoginResult.INVALID_CREDENTIALS;
             }
 
         } else {
             log.warn("Login failed: User '{}' not found.", username);
-            return LoginResult.INVALID_CREDENTIALS;
+            return UserState.LoginResult.INVALID_CREDENTIALS;
         }
     }
 
@@ -73,6 +74,7 @@ public class UserServiceImpl implements UserService {
             long lockTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(LOCK_DURATION_MINUTES);
             lockedUsers.put(username, lockTime);
             failedLoginAttempts.remove(username);
+            //todo edit above line
             log.error("User '{}' locked for {} minutes due to {} failed login attempts.", username, LOCK_DURATION_MINUTES, MAX_ATTEMPTS);
         } else {
             failedLoginAttempts.put(username, attempts);
@@ -81,17 +83,16 @@ public class UserServiceImpl implements UserService {
     }
 
     private boolean isUserLocked(String username) {
-        if (lockedUsers.containsKey(username)) {
-            long lockTime = lockedUsers.get(username);
-            if (System.currentTimeMillis() < lockTime) {
-                return true;
-            } else {
-                lockedUsers.remove(username);
-                log.info("Lock expired for user '{}'. Account is now unlocked.", username);
-                return false;
-            }
+        if (!lockedUsers.containsKey(username)) {
+            return false;
         }
-        return false;
+        long lockTime = lockedUsers.get(username);
+        if (System.currentTimeMillis() >= lockTime) {
+            lockedUsers.remove(username);
+            log.info("Lock expired for user '{}'. Account is now unlocked.", username);
+            return false;
+        }
+        return true;
     }
 
     private void resetLoginAttempts(String username) {
