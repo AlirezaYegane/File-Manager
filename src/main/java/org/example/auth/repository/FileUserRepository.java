@@ -1,16 +1,20 @@
 package org.example.auth.repository;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.auth.exception.DataReadException;
+import org.example.auth.exception.NoDataFoundException;
+import org.example.auth.exception.WriteException;
 import org.example.auth.model.User;
 import org.example.auth.serializer.MySerializer;
 
 import com.google.gson.reflect.TypeToken;
+
+import java.io.FileNotFoundException;
 import java.lang.reflect.Type;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Optional;
 
 @Slf4j
@@ -31,14 +35,17 @@ public class FileUserRepository implements UserRepository {
             File f = new File(filePath);
             if (!f.exists()) {
                 log.warn("User data file not found at {}. Starting with an empty user map.", filePath);
-                return new HashMap<>();
+                throw new FileNotFoundException("User data file not found at " + filePath);
             }
             Type type = new TypeToken<Map<String, User>>() {}.getType();
             Map<String, User> data = serializer.loadFromJson(filePath, type);
-            return (data != null) ? data : new HashMap<>();
+            if(data == null) {
+                throw new NoDataFoundException("User data file not found at " + filePath);
+            }
+            return data;
         } catch (IOException e) {
             log.error("Failed to read user data from file: {}", filePath, e);
-            return new HashMap<>();
+            throw new DataReadException("Failed to read user data from file: " + filePath, e);
         }
     }
 
@@ -47,6 +54,7 @@ public class FileUserRepository implements UserRepository {
             serializer.saveAsJson(userCache, filePath);
         } catch (IOException e) {
             log.error("Failed to write user data to file: {}", filePath, e);
+            throw  new WriteException("Failed to write user data to file: " + filePath);
         }
     }
 
