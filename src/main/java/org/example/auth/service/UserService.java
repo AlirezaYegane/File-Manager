@@ -1,17 +1,9 @@
 package org.example.auth.service;
 
+import org.example.auth.constant.UserState;
+
 public interface UserService {
-    enum RegistrationResult {
-        SUCCESS,
-        USERNAME_ALREADY_EXISTS
-    }
 
-    enum LoginResult {
-        SUCCESS,
-        INVALID_CREDENTIALS,
-        USER_LOCKED
-    }
-
-    RegistrationResult register(String username, String password);
-    LoginResult login(String username, String password);
+    UserState.RegistrationResult register(String username, String password);
+    UserState.LoginResult login(String username, String password);
 }
